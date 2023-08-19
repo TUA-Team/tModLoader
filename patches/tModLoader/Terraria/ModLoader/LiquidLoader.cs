@@ -17,6 +17,7 @@ public static class LiquidLoader
 		public int FallDelay;
 		public bool NoStandardUpdate;
 		public bool HellEvaporation;
+		public bool CanCauseDrowning;
 	}
 
 	private static int nextLiquid = LiquidID.Count;
@@ -58,6 +59,7 @@ public static class LiquidLoader
 		Array.Resize(ref LiquidLoader.liquidProperties, nextLiquid);
 		Array.Resize(ref Main.SceneMetrics._liquidCounts, nextLiquid);
 		Array.Resize(ref Main.PylonSystem._sceneMetrics._liquidCounts, nextLiquid);
+		Array.Resize(ref Collision._liquids, nextLiquid);
 
 		if (!unloading) {
 			loaded = true;
@@ -76,12 +78,18 @@ public static class LiquidLoader
 		GetLiquid(type)?.ModifyLight(i, j, ref r, ref g, ref b);
 	}
 
+	public static bool CanCauseDrowning(int type)
+	{
+		return liquidProperties[type].CanCauseDrowning;
+	}
+
 	static LiquidLoader()
 	{
 		liquidProperties = new LiquidProperties[] {
 			// Water
 			new LiquidProperties() {
-				FallDelay = 0
+				FallDelay = 0,
+				CanCauseDrowning = true
 			},
 			// Lava
 			new LiquidProperties() {
@@ -89,7 +97,8 @@ public static class LiquidLoader
 			},
 			// Honey
 			new LiquidProperties() {
-				FallDelay = 10
+				FallDelay = 10,
+				CanCauseDrowning = true
 			},
 			//Shimmer
 			new LiquidProperties() {

@@ -44,6 +44,11 @@ public abstract class ModLiquid : ModBlockType
 		set => LiquidLoader.liquidProperties[Type].FallDelay = value;
 	}
 
+	public bool CanCauseDrowning {
+		get => LiquidLoader.liquidProperties[Type].CanCauseDrowning;
+		set => LiquidLoader.liquidProperties[Type].CanCauseDrowning = value;
+	}
+
 	public override string LocalizationCategory => "Liquids";
 
 	protected sealed override void Register()

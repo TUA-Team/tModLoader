@@ -1,6 +1,6 @@
 --- src/TerrariaNetCore/Terraria/Collision.cs
 +++ src/tModLoader/Terraria/Collision.cs
-@@ -3,6 +_,7 @@
+@@ -3,10 +_,11 @@
  using Microsoft.Xna.Framework;
  using Terraria.DataStructures;
  using Terraria.ID;
@@ -8,6 +8,34 @@
  
  namespace Terraria;
  
+-public class Collision
++public partial class Collision
+ {
+ 	public struct HurtTile
+ 	{
+@@ -17,8 +_,10 @@
+ 
+ 	public static bool stair;
+ 	public static bool stairFall;
+-	public static bool honey;
+-	public static bool shimmer;
++	// public static bool honey;
++	public static ref bool honey => ref Liquids[LiquidID.Honey];
++	// public static bool shimmer;
++	public static ref bool shimmer => ref Liquids[LiquidID.Shimmer];
+ 	public static bool sloping;
+ 	public static bool landMine = false;
+ 	public static bool up;
+@@ -1003,7 +_,8 @@
+ 		for (int i = num3; i < value2; i++) {
+ 			for (int j = value3; j < value4; j++) {
+ 				Tile tile = Main.tile[i, j];
+-				if (tile != null && tile.liquid > 0 && !tile.lava() && !tile.shimmer() && (j != num4 || !tile.active() || !Main.tileSolid[tile.type] || Main.tileSolidTop[tile.type] || (includeSlopes && tile.blockType() != 0))) {
++				// if (tile != null && tile.liquid > 0 && !tile.lava() && !tile.shimmer() && (j != num4 || !tile.active() || !Main.tileSolid[tile.type] || Main.tileSolidTop[tile.type] || (includeSlopes && tile.blockType() != 0))) {
++				if (tile != null && tile.liquid > 0 && LiquidLoader.CanCauseDrowning(tile.liquidType()) && (j != num4 || !tile.active() || !Main.tileSolid[tile.type] || Main.tileSolidTop[tile.type] || (includeSlopes && tile.blockType() != 0))) { // TML: #ModdedLiquids
+ 					vector2.X = i * 16;
+ 					vector2.Y = j * 16;
+ 					int num5 = 16;
 @@ -1030,7 +_,7 @@
  		if (tile == null || !tile.active() || tile.inActive() || !Main.tileSolid[tile.type])
  			return false;
@@ -17,6 +45,68 @@
  			return false;
  
  		int num = tile.blockType();
+@@ -1135,8 +_,11 @@
+ 
+ 	public static bool WetCollision(Vector2 Position, int Width, int Height)
+ 	{
++		/*
+ 		honey = false;
+ 		shimmer = false;
++		*/
++		Array.Fill(Liquids, false); // TML: #ModdedLiquids
+ 		Vector2 vector = new Vector2(Position.X + (float)(Width / 2), Position.Y + (float)(Height / 2));
+ 		int num = 10;
+ 		int num2 = Height / 2;
+@@ -1170,11 +_,14 @@
+ 					vector2.Y += num5 * 2f;
+ 					num4 -= (int)(num5 * 2f);
+ 					if (vector.X + (float)num > vector2.X && vector.X < vector2.X + 16f && vector.Y + (float)num2 > vector2.Y && vector.Y < vector2.Y + (float)num4) {
++						/*
+ 						if (Main.tile[i, j].honey())
+ 							honey = true;
+ 
+ 						if (Main.tile[i, j].shimmer())
+ 							shimmer = true;
++						*/
++						Liquids[Main.tile[i, j].liquidType()] = true; // TML: #ModdedLiquids
+ 
+ 						return true;
+ 					}
+@@ -1187,10 +_,13 @@
+ 					vector2.Y = j * 16;
+ 					int num6 = 16;
+ 					if (vector.X + (float)num > vector2.X && vector.X < vector2.X + 16f && vector.Y + (float)num2 > vector2.Y && vector.Y < vector2.Y + (float)num6) {
++						/*
+ 						if (Main.tile[i, j - 1].honey())
+ 							honey = true;
+ 						else if (Main.tile[i, j - 1].shimmer())
+ 							shimmer = true;
++						*/
++						Liquids[Main.tile[i, j - 1].liquidType()] = true; // TML: #ModdedLiquids
+ 
+ 						return true;
+ 					}
+@@ -1203,6 +_,8 @@
+ 
+ 	public static bool LavaCollision(Vector2 Position, int Width, int Height)
+ 	{
++		Liquids[LiquidID.Lava] = false; // TML: #ModdedLiquids
++
+ 		int value = (int)(Position.X / 16f) - 1;
+ 		int value2 = (int)((Position.X + (float)Width) / 16f) + 2;
+ 		int value3 = (int)(Position.Y / 16f) - 1;
+@@ -1222,8 +_,10 @@
+ 					num3 /= 32f;
+ 					vector.Y += num3 * 2f;
+ 					num2 -= (int)(num3 * 2f);
+-					if (Position.X + (float)Width > vector.X && Position.X < vector.X + 16f && Position.Y + (float)Height > vector.Y && Position.Y < vector.Y + (float)num2)
++					if (Position.X + (float)Width > vector.X && Position.X < vector.X + 16f && Position.Y + (float)Height > vector.Y && Position.Y < vector.Y + (float)num2) {
++						Liquids[LiquidID.Lava] = true; // TML: #ModdedLiquids
+ 						return true;
++					}	
+ 				}
+ 			}
+ 		}
 @@ -2614,7 +_,10 @@
  			tile = Main.tile[num2, num3];
  			tile2 = Main.tile[num2, num3 - 1];
