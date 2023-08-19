@@ -13,15 +13,15 @@
  {
  	public struct HurtTile
  	{
-@@ -17,8 +_,10 @@
+@@ -17,8 +_,12 @@
  
  	public static bool stair;
  	public static bool stairFall;
--	public static bool honey;
--	public static bool shimmer;
-+	// public static bool honey;
++	/*
+ 	public static bool honey;
+ 	public static bool shimmer;
++	*/
 +	public static ref bool honey => ref Liquids[LiquidID.Honey];
-+	// public static bool shimmer;
 +	public static ref bool shimmer => ref Liquids[LiquidID.Shimmer];
  	public static bool sloping;
  	public static bool landMine = false;
