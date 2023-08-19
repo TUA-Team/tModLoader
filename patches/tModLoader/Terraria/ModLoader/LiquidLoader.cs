@@ -78,6 +78,11 @@ public static class LiquidLoader
 		GetLiquid(type)?.ModifyLight(i, j, ref r, ref g, ref b);
 	}
 
+	public static void OnItemCollide(int type, Item item)
+	{
+		GetLiquid(type)?.OnItemCollide(item);
+	}
+
 	public static bool CanCauseDrowning(int type)
 	{
 		return liquidProperties[type].CanCauseDrowning;

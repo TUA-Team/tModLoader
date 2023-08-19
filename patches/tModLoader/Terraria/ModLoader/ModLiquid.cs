@@ -107,4 +107,13 @@ public abstract class ModLiquid : ModBlockType
 			MapLoader.liquidEntries[Type].Add(entry);
 		}
 	}
+
+	/// <summary>
+	/// Allows you to make anything happen when an item is inside this liquid.
+	/// </summary>
+	/// <param name="item">The item which triggered this hook.</param>
+	public virtual void OnItemCollide(Item item)
+	{
+
+	}
 }

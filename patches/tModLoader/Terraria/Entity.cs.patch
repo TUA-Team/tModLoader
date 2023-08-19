@@ -1,6 +1,9 @@
 --- src/TerrariaNetCore/Terraria/Entity.cs
 +++ src/tModLoader/Terraria/Entity.cs
-@@ -3,19 +_,51 @@
+@@ -1,26 +_,66 @@
+ using System;
+ using Microsoft.Xna.Framework;
++using Terraria.ID;
  
  namespace Terraria;
  
@@ -51,5 +54,17 @@
 +	/// <br/> Projectile: Affects movement speed and some projectiles die when wet. <see cref="Projectile.ignoreWater"/> prevents this.
 +	/// </summary>
  	public bool wet;
++	/*
  	public bool shimmerWet;
  	public bool honeyWet;
++	*/
++	public ref bool shimmerWet => ref LiquidsWet[LiquidID.Shimmer];
++	public ref bool honeyWet => ref LiquidsWet[LiquidID.Honey];
+ 	public byte wetCount;
++	/*
+ 	public bool lavaWet;
++	*/
++	public ref bool lavaWet => ref LiquidsWet[LiquidID.Lava];
+ 
+ 	public virtual Vector2 VisualPosition => position;
+ 

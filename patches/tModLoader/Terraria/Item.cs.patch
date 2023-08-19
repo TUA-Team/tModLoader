@@ -1870,6 +1870,17 @@
  		placeStyle = 0;
  		buffTime = 0;
  		buffType = 0;
+@@ -47358,7 +_,10 @@
+ 		mana = 0;
+ 		wet = false;
+ 		wetCount = 0;
++		/*
+ 		lavaWet = false;
++		*/
++		Array.Fill(LiquidsWet, false);
+ 		channel = false;
+ 		manaIncrease = 0;
+ 		timeSinceTheItemHasBeenReservedForSomeone = 0;
 @@ -47426,6 +_,9 @@
  
  	public Color GetAlpha(Color newColor)
@@ -1956,6 +1967,18 @@
  				gravity = 0f;
  				velocity.X = 0f;
  				velocity.Y = 0f;
+@@ -48036,6 +_,11 @@
+ 			keepTime--;
+ 
+ 		if (!beingGrabbed) {
++			for (int liquidId = 0; liquidId < LiquidLoader.LiquidCount; liquidId++) {
++				if (LiquidsWet[liquidId])
++					LiquidLoader.OnItemCollide(liquidId, this);
++			}
++
+ 			if (shimmered) {
+ 				if (Main.rand.Next(30) == 0) {
+ 					int num3 = Dust.NewDust(position, width, height, 309);
 @@ -48124,6 +_,8 @@
  			timeSinceItemSpawned += num7;
  		}
@@ -1983,6 +2006,40 @@
  		if (!shimmered && ItemID.Sets.ItemNoGravity[type]) {
  			velocity.X *= 0.95f;
  			if ((double)velocity.X < 0.1 && (double)velocity.X > -0.1)
+@@ -48356,12 +_,20 @@
+ 			lavaWet = true;
+ 
+ 		bool num4 = Collision.WetCollision(position, width, height);
++		if (Collision.Liquids[LiquidID.Water])
++			LiquidsWet[LiquidID.Water] = true;
++
+ 		if (Collision.honey)
+ 			honeyWet = true;
+ 
+ 		if (Collision.shimmer)
+ 			shimmerWet = true;
+ 
++		for (int liquidId = LiquidID.Count; liquidId < LiquidLoader.LiquidCount; liquidId++) {
++			if (Collision.Liquids[liquidId])
++				LiquidsWet[liquidId] = true;
++		}
++
+ 		if (num4) {
+ 			if (!wet) {
+ 				if (wetCount == 0) {
+@@ -48505,9 +_,12 @@
+ 		}
+ 
+ 		if (!wet) {
++			/*
+ 			lavaWet = false;
+ 			honeyWet = false;
+ 			shimmerWet = false;
++			*/
++			Array.Fill(LiquidsWet, false);
+ 		}
+ 
+ 		if (wetCount > 0)
 @@ -48553,7 +_,7 @@
  		Rectangle hitbox = base.Hitbox;
  		for (int j = 0; j < 200; j++) {
