@@ -867,7 +867,7 @@ Mods: {
 			}
 
 			ExampleBucket: {
-				DisplayName: Exemple Liquid Bucket
+				DisplayName: Example Liquid Bucket
 				Tooltip: ""
 			}
 		}
