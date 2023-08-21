@@ -1967,6 +1967,20 @@
  				gravity = 0f;
  				velocity.X = 0f;
  				velocity.Y = 0f;
+@@ -48012,7 +_,12 @@
+ 		}
+ 
+ 		Vector2 wetVelocity = velocity * 0.5f;
++
++		int modLiquidWet = Array.IndexOf(LiquidsWet, true, LiquidID.Count);
++		if (modLiquidWet != -1 && LiquidLoader.HasWetItemPhysics(modLiquidWet, this)) {
++			LiquidLoader.WetItemPhysics(modLiquidWet, this, velocity, ref gravity, ref maxFallSpeed, ref wetVelocity);
++		}
+-		if (shimmerWet) {
++		else if (shimmerWet) {
+ 			gravity = 0.065f;
+ 			maxFallSpeed = 4f;
+ 			wetVelocity = velocity * 0.375f;
 @@ -48036,6 +_,11 @@
  			keepTime--;
  

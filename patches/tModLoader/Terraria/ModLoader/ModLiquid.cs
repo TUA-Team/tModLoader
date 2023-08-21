@@ -116,4 +116,27 @@ public abstract class ModLiquid : ModBlockType
 	{
 
 	}
+
+	/// <summary>
+	/// Whether or not this liquid has custom physics for the specified item.
+	/// When it returns false, this liquid will act like water.
+	/// </summary>
+	/// <param name="item">The item which triggered this hook.</param>
+	public virtual bool HasWetItemPhysics(Item item)
+	{
+		return false;
+	}
+
+	/// <summary>
+	/// Allows you to apply custom physics to items inside this liquid.
+	/// </summary>
+	/// <param name="item">The item which triggered this hook.</param>
+	/// <param name="velocity">The current velocity of the item.</param>
+	/// <param name="gravity">The force of gravity inside this liquid.</param>
+	/// <param name="maxFallSpeed">The max fall speed inside this liquid, defaults to 7.</param>
+	/// <param name="wetVelocity">The velocity of the item while it is wet, defaults to half of velocity.</param>
+	public virtual void WetItemPhysics(Item item, Vector2 velocity, ref float gravity, ref float maxFallSpeed, ref Vector2 wetVelocity)
+	{
+
+	}
 }

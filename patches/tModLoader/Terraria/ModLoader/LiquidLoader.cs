@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Xna.Framework;
 using Terraria.GameContent;
 using Terraria.GameContent.Liquid;
 using Terraria.ID;
@@ -81,6 +82,19 @@ public static class LiquidLoader
 	public static void OnItemCollide(int type, Item item)
 	{
 		GetLiquid(type)?.OnItemCollide(item);
+	}
+
+	public static bool HasWetItemPhysics(int type, Item item)
+	{
+		if (type < LiquidID.Count)
+			return false;
+
+		return GetLiquid(type).HasWetItemPhysics(item);
+	}
+
+	public static void WetItemPhysics(int type, Item item, Vector2 velocity, ref float gravity, ref float maxFallSpeed, ref Vector2 wetVelocity)
+	{
+		GetLiquid(type)?.WetItemPhysics(item, velocity, ref gravity, ref maxFallSpeed, ref wetVelocity);
 	}
 
 	public static bool CanCauseDrowning(int type)
