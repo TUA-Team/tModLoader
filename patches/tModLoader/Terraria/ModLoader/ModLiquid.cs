@@ -108,19 +108,70 @@ public abstract class ModLiquid : ModBlockType
 		}
 	}
 
+	/// <summary>
+	/// Called at the very start of Liquid.Update before liquid merges or liquid movement.
+	/// </summary>
+	/// <param name="x"></param>
+	/// <param name="y"></param>
+	/// <param name="liquid"></param>
+	/// <param name="thisTile"></param>
+	/// <param name="left"></param>
+	/// <param name="right"></param>
+	/// <param name="up"></param>
+	/// <param name="down"></param>
+	public virtual void PreUpdate(int x, int y, Liquid liquid, Tile thisTile, Tile left, Tile right, Tile up, Tile down) { }
 
-	public virtual void PreUpdate(int x, int y)
-	{
-		
-	}
+	/// <summary>
+	/// Called just after liquid merge checks, and just before liquid movement checks.
+	/// </summary>
+	/// <param name="x"></param>
+	/// <param name="y"></param>
+	/// <param name="liquid"></param>
+	/// <param name="thisTile"></param>
+	/// <param name="left"></param>
+	/// <param name="right"></param>
+	/// <param name="up"></param>
+	/// <param name="down"></param>
+	/// <returns></returns>
+	public virtual bool Update(int x, int y, Liquid liquid, Tile thisTile, Tile left, Tile right, Tile up, Tile down) => true;
 
-	public virtual bool Update(Liquid liquid, int x, int y, Tile left, Tile right, Tile up, Tile down)
-	{
-		return true;
-	}
+	/// <summary>
+	/// Called at the very end up Liquid.Update after merge and movement checks.
+	/// </summary>
+	/// <param name="x"></param>
+	/// <param name="y"></param>
+	/// <param name="liquid"></param>
+	/// <param name="thisTile"></param>
+	/// <param name="left"></param>
+	/// <param name="right"></param>
+	/// <param name="up"></param>
+	/// <param name="down"></param>
+	public virtual void PostUpdate(int x, int y, Liquid liquid, Tile thisTile, Tile left, Tile right, Tile up, Tile down) { }
 
-	public virtual void Merge(int otherLiquid, bool[] liquidNearby, ref int liquidMergeTileType, ref int liquidMergeType)
-	{
+	/// <summary>
+	/// Return false to prevent liquids from merging.  Return true by default.
+	/// </summary>
+	/// <param name="x"></param>
+	/// <param name="y"></param>
+	/// <param name="tile"></param>
+	/// <param name="x2"></param>
+	/// <param name="y2"></param>
+	/// <param name="tile2"></param>
+	/// <returns></returns>
+	public virtual bool AllowMergeLiquids(int x, int y, Tile tile, int x2, int y2, Tile tile2) => true;
 
-	}
+	/// <summary>
+	/// Allows you to change the resulting tile created when liquids merge together.
+	/// </summary>
+	/// <param name="x">x tile coordinate of the tile being merged onto.</param>
+	/// <param name="y">y tile coordinate of the tile being merged onto.</param>
+	/// <param name="type">Liquid type at Main.tile[x, y]</param>
+	/// <param name="liquidNearby">Use liquidNearby[LiquidID] to check if that liquid is touching the tile being merged onto.</param>
+	/// <param name="liquidMergeTileType">The tile type being created by the merge at Main.tile[x, y].</param>
+	/// <param name="liquidMergeType">The liquid type that is being used to determine the created tile type.  (Changing only this will do nothing since the created tile has already been determined.)</param>
+	public virtual void GetLiquidMergeTypes(int x, int y, int otherLiquid, bool[] liquidNearby, ref int liquidMergeTileType, ref int liquidMergeType, LiquidMerge liquidMerge) { }
+
+	public virtual void OnMerge(LiquidMerge liquidMerge, Dictionary<int, int> consumedLiquids) { }
+	public virtual bool PreventMerge(LiquidMerge liquidMerge) => false;
+	public virtual bool ShouldDeleteLiquid(LiquidMerge liquidMerge) => false;
 }

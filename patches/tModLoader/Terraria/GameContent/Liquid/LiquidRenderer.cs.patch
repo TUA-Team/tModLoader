@@ -1,5 +1,13 @@
 --- src/TerrariaNetCore/Terraria/GameContent/Liquid/LiquidRenderer.cs
 +++ src/tModLoader/Terraria/GameContent/Liquid/LiquidRenderer.cs
+@@ -5,6 +_,7 @@
+ using Terraria.Graphics;
+ using Terraria.ID;
+ using Terraria.Utilities;
++using Terraria.ModLoader;
+ 
+ namespace Terraria.GameContent.Liquid;
+ 
 @@ -33,8 +_,8 @@
  		public float VisibleRightWall;
  		public float VisibleBottomWall;
@@ -73,7 +81,7 @@
  
  	public event Action<Color[], Rectangle> WaveFilters;
  
-@@ -131,14 +_,14 @@
+@@ -131,20 +_,24 @@
  		if (_waveMask.Length < drawArea.Width * drawArea.Height)
  			_waveMask = new Color[drawArea.Width * drawArea.Height];
  
@@ -90,3 +98,13 @@
  					if (tile == null)
  						tile = new Tile();
  
+ 					ptr2->LiquidLevel = (float)(int)tile.liquid / 255f;
+ 					ptr2->IsHalfBrick = tile.halfBrick() && ptr2[-1].HasLiquid && !TileID.Sets.Platforms[tile.type];
++					/*
+ 					ptr2->IsSolid = WorldGen.SolidOrSlopedTile(tile);
++					*/
++					bool notSolid = !WorldGen.SolidOrSlopedTile(tile);
++					ptr2->IsSolid = !LiquidLoader.ShouldDrawLiquids(i, j, notSolid);
+ 					ptr2->HasLiquid = tile.liquid != 0;
+ 					ptr2->VisibleLiquidLevel = 0f;
+ 					ptr2->HasWall = tile.wall != 0;

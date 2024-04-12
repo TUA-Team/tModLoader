@@ -17,7 +17,7 @@ namespace ExampleMod.Content.Liquids
 			DefaultOpacity = 0.6f;
 		}
 
-		public override void PreUpdate(int x, int y) {
+		public override void PreUpdate(int x, int y, Liquid liquid, Tile thisTile, Tile left, Tile right, Tile up, Tile down) {
 			Tile tile = Main.tile[x, y];
 
 			if (y < 200 && tile.LiquidAmount > 0) {
@@ -29,9 +29,9 @@ namespace ExampleMod.Content.Liquids
 			}
 		}
 
-		public override void Merge(int otherLiquid, bool[] liquidNearby, ref int liquidMergeTileType, ref int liquidMergeType) {
+		public override void GetLiquidMergeTypes(int x, int y, int otherLiquid, bool[] liquidNearby, ref int liquidMergeTileType, ref int liquidMergeType, LiquidMerge liquidMerge) {
 			liquidMergeTileType = 0;
-
+			/*
 			if (otherLiquid == ModContent.GetInstance<ExampleLiquid2>().Type) {
 				liquidMergeTileType = TileID.LunarOre;
 			}
@@ -40,6 +40,7 @@ namespace ExampleMod.Content.Liquids
 			}
 
 			liquidMergeType = 4;
+			*/
 		}
 	}
 }

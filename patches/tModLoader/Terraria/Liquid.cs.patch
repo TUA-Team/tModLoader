@@ -1,14 +1,21 @@
 --- src/TerrariaNetCore/Terraria/Liquid.cs
 +++ src/tModLoader/Terraria/Liquid.cs
-@@ -3,6 +_,7 @@
+@@ -1,10 +_,14 @@
+ using System;
+ using System.Collections.Generic;
++using Terraria;
  using Terraria.GameContent.NetModules;
  using Terraria.ID;
  using Terraria.Localization;
 +using Terraria.ModLoader;
  using Terraria.ObjectData;
  using Terraria.WorldBuilding;
++using Terraria.ModLoader;
++using static Terraria.WorldBuilding.Searches;
  
-@@ -121,7 +_,7 @@
+ namespace Terraria;
+ 
+@@ -121,17 +_,22 @@
  		bool flag = tile.honey();
  		bool flag2 = tile.shimmer();
  		int num3 = tile.liquid;
@@ -17,12 +24,79 @@
  		tile.liquid = 0;
  		bool flag3 = true;
  		while (true) {
+ 			Tile tile2 = Main.tile[num, num2 + 1];
+ 			bool flag4 = false;
++			bool canMoveDownVanilla = num2 < Main.maxTilesY - 5 && tile2.liquid == 0 && (!tile2.nactive() || !Main.tileSolid[tile2.type] || Main.tileSolidTop[tile2.type]);
++			/*
+ 			while (num2 < Main.maxTilesY - 5 && tile2.liquid == 0 && (!tile2.nactive() || !Main.tileSolid[tile2.type] || Main.tileSolidTop[tile2.type])) {
++			*/
++			while (LiquidLoader.CanMoveDown(originX, originY, num, num2 + 1, canMoveDownVanilla)) {
+ 				num2++;
+ 				flag4 = true;
+ 				flag3 = false;
+ 				tile2 = Main.tile[num, num2 + 1];
++				canMoveDownVanilla = num2 < Main.maxTilesY - 5 && tile2.liquid == 0 && (!tile2.nactive() || !Main.tileSolid[tile2.type] || Main.tileSolidTop[tile2.type]);
+ 			}
+ 
+ 			if (WorldGen.gen && flag4 && !flag && !flag2) {
+@@ -149,18 +_,22 @@
+ 			bool flag6 = false;
+ 			bool flag7 = false;
+ 			while (true) {
++				//Left or Right tile Check
+ 				if (Main.tile[num + num5 * num4, num2].liquid == 0) {
+ 					num6 = num4;
+ 					num7 = num5;
+ 				}
+ 
++				//Check if too close to min/max x
+ 				if (num4 == -1 && num + num5 * num4 < 5)
+ 					flag6 = true;
+ 				else if (num4 == 1 && num + num5 * num4 > Main.maxTilesX - 5)
+ 					flag5 = true;
+ 
++				//Check if down tile has the same type of liquid and not full, then transfer liquid to it.
+ 				tile2 = Main.tile[num + num5 * num4, num2 + 1];
+ 				if (tile2.liquid != 0 && tile2.liquid != byte.MaxValue && tile2.liquidType() == b) {
++					//Move liquid to the down tile
+ 					int num8 = 255 - tile2.liquid;
+ 					if (num8 > num3)
+ 						num8 = num3;
+@@ -171,13 +_,28 @@
+ 						break;
+ 				}
+ 
++				//Potential problem here is that the tile being looked at Main.tile[num, num2] is not always the original tile, and won't have values for
++				//	liquid type or liquid, making it difficult to work with.  May need to have a CanSettleLiquids hook with extra info passed in.
++				bool canMoveDown = num2 < Main.maxTilesY - 5 && tile2.liquid == 0 && (!tile2.nactive() || !Main.tileSolid[tile2.type] || Main.tileSolidTop[tile2.type]);
++				int moveX = num + num5 * num4;
++				/*
+ 				if (num2 < Main.maxTilesY - 5 && tile2.liquid == 0 && (!tile2.nactive() || !Main.tileSolid[tile2.type] || Main.tileSolidTop[tile2.type])) {
++				*/
++				if (LiquidLoader.CanMoveDown(moveX, num2, moveX, num2 + 1, canMoveDown)) {
+ 					flag7 = true;
+ 					break;
+ 				}
+ 
++				//Check horizontal tile.
+ 				Tile tile3 = Main.tile[num + (num5 + 1) * num4, num2];
++				bool cantMoveHorizontal = (tile3.liquid != 0 && (!flag3 || num4 != 1)) || (tile3.nactive() && Main.tileSolid[tile3.type] && !Main.tileSolidTop[tile3.type]);
++				bool canMoveHorizontalVanilla = !cantMoveHorizontal;
++				int nextMoveX = num + (num5 + 1) * num4;
++				bool canMoveHorizontal = num4 == -1 ? LiquidLoader.CanMoveLeft(num, num2, nextMoveX, num2, canMoveHorizontalVanilla) : LiquidLoader.CanMoveRight(num, num2, nextMoveX, num2, canMoveHorizontalVanilla);
++				/*
+ 				if ((tile3.liquid != 0 && (!flag3 || num4 != 1)) || (tile3.nactive() && Main.tileSolid[tile3.type] && !Main.tileSolidTop[tile3.type])) {
++				*/
++				if (!canMoveHorizontal) {
+ 					if (num4 == 1)
+ 						flag5 = true;
+ 					else
 @@ -338,7 +_,9 @@
  
  		byte liquid = tile5.liquid;
  		float num = 0f;
 +
-+		LiquidLoader.PreUpdate(tile5.LiquidType, x, y);
++		LiquidLoader.PreUpdate(x, y, tile5.LiquidType, this, tile5, tile, tile2, tile3, tile4);
 -		if (y > Main.UnderworldLayer && tile5.liquidType() == 0 && tile5.liquid > 0) {
 +		if (y > Main.UnderworldLayer && LiquidLoader.liquidProperties[tile5.liquidType()].HellEvaporation && tile5.liquid > 0) {
  			byte b = 2;
@@ -37,13 +111,13 @@
  		if (tile5.lava()) {
  			LavaCheck(x, y);
  			if (!quickFall) {
-@@ -417,6 +_,43 @@
+@@ -417,8 +_,51 @@
  				}
  			}
  		}
 +		*/
-+
-+		for (int i = 0; i < LiquidLoader.LiquidCount; i++) {
+ 
++		for (int i = 1; i < LiquidLoader.LiquidCount; i++) {
 +			if (tile5.LiquidType == i) {
 +				if (tile5.LiquidType == LiquidID.Lava) {
 +					LavaCheck(x, y);
@@ -51,6 +125,7 @@
 +				else {
 +					LiquidCheck(x, y, i);
 +				}
++
 +				if (!quickFall) {
 +					if (delay < LiquidLoader.liquidProperties[i].FallDelay) {
 +						delay++;
@@ -61,172 +136,646 @@
 +				}
 +				break;
 +			} else {
-+				if (tile.LiquidType == i)
++				if (tile.LiquidType == i && LiquidLoader.AllowMergeLiquids(x, y, tile5, x - 1, y, tile))
 +					AddWater(x - 1, y);
 +
-+				if (tile2.LiquidType == i)
++				if (tile2.LiquidType == i && LiquidLoader.AllowMergeLiquids(x, y, tile5, x + 1, y, tile2))
 +					AddWater(x + 1, y);
 +
-+				if (tile3.LiquidType == i)
++				if (tile3.LiquidType == i && LiquidLoader.AllowMergeLiquids(x, y, tile5, x, y - 1, tile3))
 +					AddWater(x, y - 1);
 +
-+				if (tile4.LiquidType == i)
++				if (tile4.LiquidType == i && LiquidLoader.AllowMergeLiquids(x, y, tile5, x, y + 1, tile4))
 +					AddWater(x, y + 1);
 +			} 
 +		}
 +
-+		if (!LiquidLoader.Update(tile5.LiquidType, this, x, y, tile, tile2, tile3, tile4)) {
++		if (!LiquidLoader.Update(x, y, tile5.LiquidType, this, tile5, tile, tile2, tile3, tile4)) {
 +			return;
 +		}
- 
++
++		bool canMoveDown = (!tile4.nactive() || !Main.tileSolid[tile4.type] || Main.tileSolidTop[tile4.type]) && (tile4.liquid <= 0 || tile4.liquidType() == tile5.liquidType()) && tile4.liquid < byte.MaxValue;
++		/*
  		if ((!tile4.nactive() || !Main.tileSolid[tile4.type] || Main.tileSolidTop[tile4.type]) && (tile4.liquid <= 0 || tile4.liquidType() == tile5.liquidType()) && tile4.liquid < byte.MaxValue) {
++		*/
++		if (LiquidLoader.CanMoveDown(x, y, x, y + 1, canMoveDown)) {
++			//Move Down
  			bool flag = false;
-@@ -744,6 +_,7 @@
+ 			num = 255 - tile4.liquid;
+ 			if (num > (float)(int)tile5.liquid)
+@@ -445,6 +_,9 @@
+ 		}
+ 
+ 		if (tile5.liquid > 0) {
++			CheckMoveLiquidsLeftOrRight(x, y);
++
++			/*
+ 			bool flag2 = true;
+ 			bool flag3 = true;
+ 			bool flag4 = true;
+@@ -724,6 +_,7 @@
+ 
+ 				tile5.liquid = (byte)num;
+ 			}
++			*/
+ 		}
+ 
+ 		if (tile5.liquid != liquid) {
+@@ -744,7 +_,106 @@
  		else {
  			kill++;
  		}
-+		
++
++		LiquidLoader.PostUpdate(x, y, tile5.LiquidType, this, tile5, tile, tile2, tile3, tile4);
  	}
++
++	//Added by tModLoader
++	private static bool MovePrevented(Tile tile) => tile.HasUnactuatedTile && Main.tileSolid[tile.TileType] && !Main.tileSolidTop[tile.TileType];
++
++	//Added by tModLoader
++	private static bool WillMerge(Tile tile, Tile other) => other.LiquidAmount > 0 && tile.LiquidType != other.LiquidType;
++
++	//Added by tModLoader, written by andro951.
++	//Replaces the code in Update() that moves liquids left and right with loops to make it much easier to work with an insert hooks.
++	//Extra care was taken to make the logic exactly the same as the original even where it seems to be inefficient to prevent potential issues.
++	private static void CheckMoveLiquidsLeftOrRight(int x, int y)
++	{
++		Tile tile = Main.tile[x, y];
++		if (tile.LiquidAmount > 0) {
++			float num = 0f;
++			int numLeft = 0;
++			int numRight = 0;
++			int liquidAmount = 0;
++			for (int i = 1; i <= 3; i++) {
++				int leftX = x - i;
++				Tile tileL = Main.tile[leftX, y];
++				bool canMoveLeft = true;
++				if (MovePrevented(tileL) || WillMerge(tile, tileL)) {
++					canMoveLeft = false;
++				}
++				else if (i > 1 && tileL.LiquidAmount == 0) {
++					canMoveLeft = false;
++				}
++				else if (i == 2 && tile.LiquidAmount > 250) {
++					canMoveLeft = false;
++				}
++				
++				if (LiquidLoader.CanMoveLeft(x, y, leftX, y, canMoveLeft)) {
++					numLeft++;
++					liquidAmount += tileL.LiquidAmount;
++				}
++
++				int rightX = x + i;
++				Tile tileR = Main.tile[rightX, y];
++				bool canMoveRight = true;
++				if (MovePrevented(tileR) || WillMerge(tile, tileR)) {
++					canMoveRight = false;
++				}
++				else if (i > 1 && tileR.LiquidAmount == 0) {
++					canMoveRight = false;
++				}
++				else if (i == 2 && tile.LiquidAmount > 250) {
++					canMoveRight = false;
++				}
++				
++				if (LiquidLoader.CanMoveRight(x, y, rightX, y, canMoveRight)) {
++					numRight++;
++					liquidAmount += tileR.LiquidAmount;
++				}
++
++				if (!canMoveLeft || !canMoveRight)
++					break;
++			}
++				
++			num += tile.LiquidAmount + liquidAmount;
++			if (tile.LiquidAmount < 3)
++				num--;
++
++			byte newAmount = (byte)Math.Round(num / (float)(1 + numLeft + numRight));
++			if (newAmount == byte.MaxValue - 1 && WorldGen.genRand.Next(30) == 0)
++				newAmount = byte.MaxValue;
++				
++			bool anyUpdated = false;
++			int higherNum = Math.Max(numLeft, numRight);
++			for (int i = 1; i <= higherNum; i++) {
++				if (i <= numLeft) {
++					int tileX = x - i;
++					Tile tileL = Main.tile[tileX, y];
++					tileL.LiquidType = tile.LiquidType;
++					if (tileL.LiquidAmount != newAmount || tile.LiquidAmount != newAmount) {
++						tileL.LiquidAmount = newAmount;
++						Liquid.AddWater(tileX, y);
++						anyUpdated = true;
++					}
++				}
++	
++				if (i <= numRight) {
++					int tileX = x + i;
++					Tile tileLR = Main.tile[tileX, y];
++					tileLR.LiquidType = tile.LiquidType;
++					if (tileLR.LiquidAmount != newAmount || tile.LiquidAmount != newAmount) {
++						tileLR.LiquidAmount = newAmount;
++						Liquid.AddWater(tileX, y);
++						anyUpdated = true;
++					}
++				}
++			}
++
++			if (anyUpdated || numLeft < 2 && numRight < 2 || Main.tile[x, y - 1].LiquidAmount <= 0)
++				tile.LiquidAmount = newAmount;
++ 		}
++ 	}
  
  	public static void StartPanic()
-@@ -970,6 +_,21 @@
+ 	{
+@@ -963,6 +_,10 @@
+ 		if (WorldGen.SolidTile(x, y))
+ 			return;
+ 
++		LiquidMerge liquidMerge = new(x, y);
++		liquidMerge.TryMerge();
++
++		/*
+ 		Tile tile = Main.tile[x - 1, y];
+ 		Tile tile2 = Main.tile[x + 1, y];
+ 		Tile tile3 = Main.tile[x, y - 1];
+@@ -970,6 +_,7 @@
  		Tile tile5 = Main.tile[x, y];
  		if ((tile.liquid > 0 && tile.liquidType() != thisLiquidType) || (tile2.liquid > 0 && tile2.liquidType() != thisLiquidType) || (tile3.liquid > 0 && tile3.liquidType() != thisLiquidType)) {
  			int num = 0;
 +
-+			bool[] liquidNearby = new bool[LiquidLoader.LiquidCount];
-+
-+			if (tile.LiquidAmount > 0) {
-+				liquidNearby[tile.LiquidType] = true;
-+			}
-+
-+			if (tile2.LiquidAmount > 0) {
-+				liquidNearby[tile2.LiquidType] = true;
-+			}
-+
-+			if (tile3.LiquidAmount > 0) {
-+				liquidNearby[tile3.LiquidType] = true;
-+			}
-+
  			if (tile.liquidType() != thisLiquidType) {
  				num += tile.liquid;
  				tile.liquid = 0;
-@@ -987,11 +_,15 @@
- 
- 			int liquidMergeTileType = 56;
- 			int liquidMergeType = 0;
-+			/*
- 			bool waterNearby = tile.liquidType() == 0 || tile2.liquidType() == 0 || tile3.liquidType() == 0;
+@@ -991,6 +_,7 @@
  			bool lavaNearby = tile.lava() || tile2.lava() || tile3.lava();
  			bool honeyNearby = tile.honey() || tile2.honey() || tile3.honey();
  			bool shimmerNearby = tile.shimmer() || tile2.shimmer() || tile3.shimmer();
-+			*/
 +
--			GetLiquidMergeTypes(thisLiquidType, out liquidMergeTileType, out liquidMergeType, waterNearby, lavaNearby, honeyNearby, shimmerNearby);
-+			// GetLiquidMergeTypes(thisLiquidType, out liquidMergeTileType, out liquidMergeType, waterNearby, lavaNearby, honeyNearby, shimmerNearby);
-+			GetLiquidMergeTypes(thisLiquidType, out liquidMergeTileType, out liquidMergeType, liquidNearby);
+ 			GetLiquidMergeTypes(thisLiquidType, out liquidMergeTileType, out liquidMergeType, waterNearby, lavaNearby, honeyNearby, shimmerNearby);
  			if (num < 24 || liquidMergeType == thisLiquidType)
  				return;
- 
-@@ -1003,6 +_,7 @@
+@@ -1003,6 +_,8 @@
  
  			if (!tile5.active()) {
  				tile5.liquid = 0;
++				*/
 +				/*
  				switch (thisLiquidType) {
  					case 1:
  						tile5.lava(lava: false);
-@@ -1014,6 +_,8 @@
+@@ -1014,6 +_,9 @@
  						tile5.shimmer(shimmer: false);
  						break;
  				}
 +				*/
++				/*
 +				tile5.LiquidType = 0;
  
  				TileChangeType liquidChangeType = WorldGen.GetLiquidChangeType(thisLiquidType, liquidMergeType);
  				if (!WorldGen.gen)
-@@ -1058,12 +_,23 @@
+@@ -1048,6 +_,10 @@
+ 				return;
  
- 			int liquidMergeTileType2 = 56;
- 			int liquidMergeType2 = 0;
-+			/*
- 			bool waterNearby2 = tile4.liquidType() == 0;
+ 			if (tile5.liquid < 24) {
++				//Delete this liquid if it's above a different liquid and liquidAmount is < 24
++				if (!LiquidLoader.ShouldDeleteLiquid(x, y, tile4.LiquidType, thisLiquidType, 56, tile5.LiquidAmount))
++					return;
++
+ 				tile5.liquid = 0;
+ 				tile5.liquidType(0);
+ 				if (Main.netMode == 2)
+@@ -1062,8 +_,11 @@
  			bool lavaNearby2 = tile4.lava();
  			bool honeyNearby2 = tile4.honey();
  			bool shimmerNearby2 = tile4.shimmer();
--			GetLiquidMergeTypes(thisLiquidType, out liquidMergeTileType2, out liquidMergeType2, waterNearby2, lavaNearby2, honeyNearby2, shimmerNearby2);
-+			*/
-+			bool[] liquidNearby = new bool[LiquidLoader.LiquidCount];
-+
-+			if(tile4.LiquidAmount > 0) {
-+				liquidNearby[tile4.LiquidType] = true;
-+			}
 +			
-+
-+			// GetLiquidMergeTypes(thisLiquidType, out liquidMergeTileType, out liquidMergeType, waterNearby, lavaNearby, honeyNearby, shimmerNearby);
-+			GetLiquidMergeTypes(thisLiquidType, out liquidMergeTileType2, out liquidMergeType2, liquidNearby);
+ 			GetLiquidMergeTypes(thisLiquidType, out liquidMergeTileType2, out liquidMergeType2, waterNearby2, lavaNearby2, honeyNearby2, shimmerNearby2);
  			tile5.liquid = 0;
++			*/
 +			/*
  			switch (thisLiquidType) {
  				case 1:
  					tile5.lava(lava: false);
-@@ -1075,6 +_,8 @@
+@@ -1075,6 +_,9 @@
  					tile5.shimmer(shimmer: false);
  					break;
  			}
 +			*/
++			/*
 +			tile5.LiquidType = 0;
  
  			tile4.liquid = 0;
  			TileChangeType liquidChangeType2 = WorldGen.GetLiquidChangeType(thisLiquidType, liquidMergeType2);
-@@ -1088,11 +_,12 @@
+@@ -1086,6 +_,7 @@
+ 			if (Main.netMode == 2)
+ 				NetMessage.SendTileSquare(-1, x - 1, y, 3, liquidChangeType2);
  		}
++		*/
  	}
  
--	public static void GetLiquidMergeTypes(int thisLiquidType, out int liquidMergeTileType, out int liquidMergeType, bool waterNearby, bool lavaNearby, bool honeyNearby, bool shimmerNearby)
-+	//public static void GetLiquidMergeTypes(int thisLiquidType, out int liquidMergeTileType, out int liquidMergeType, bool waterNearby, bool lavaNearby, bool honeyNearby, bool shimmerNearby)
-+	public static void GetLiquidMergeTypes(int thisLiquidType, out int liquidMergeTileType, out int liquidMergeType, bool[] liquidNearby)
- 	{
- 		liquidMergeTileType = 56;
- 		liquidMergeType = thisLiquidType;
--		if (thisLiquidType != 0 && waterNearby) {
-+		if (thisLiquidType != LiquidID.Water && liquidNearby[LiquidID.Water]) {
- 			switch (thisLiquidType) {
- 				case 1:
- 					liquidMergeTileType = 56;
-@@ -1108,7 +_,7 @@
- 			liquidMergeType = 0;
+ 	public static void GetLiquidMergeTypes(int thisLiquidType, out int liquidMergeTileType, out int liquidMergeType, bool waterNearby, bool lavaNearby, bool honeyNearby, bool shimmerNearby)
+@@ -1273,5 +_,403 @@
+ 			else
+ 				WorldGen.CheckLilyPad(num, num2);
  		}
- 
--		if (thisLiquidType != 1 && lavaNearby) {
-+		if (thisLiquidType != LiquidID.Lava && liquidNearby[LiquidID.Lava]) {
- 			switch (thisLiquidType) {
- 				case 0:
- 					liquidMergeTileType = 56;
-@@ -1124,7 +_,7 @@
- 			liquidMergeType = 1;
- 		}
- 
--		if (thisLiquidType != 2 && honeyNearby) {
-+		if (thisLiquidType != LiquidID.Honey && liquidNearby[LiquidID.Honey]) {
- 			switch (thisLiquidType) {
- 				case 0:
- 					liquidMergeTileType = 229;
-@@ -1140,7 +_,7 @@
- 			liquidMergeType = 2;
- 		}
- 
--		if (thisLiquidType != 3 && shimmerNearby) {
-+		if (thisLiquidType != LiquidID.Shimmer && liquidNearby[LiquidID.Shimmer]) {
- 			switch (thisLiquidType) {
- 				case 0:
- 					liquidMergeTileType = 659;
-@@ -1155,6 +_,8 @@
- 
- 			liquidMergeType = 3;
- 		}
++	}
++}
++public abstract class LiquidMergeIngredient
++{
++	public Tile Tile { get; private set; }
++	public int X { get; private set; }
++	public int Y { get; private set; }
++	public abstract byte LiquidAmount { get; }
++	public abstract int LiquidType { get; }
++	public byte LiquidAmountToConsume = 0;
++	internal bool BeingUsedForMerge { get; private set; } = false;
++	internal void SetBeingUsedForMerge()
++	{
++		BeingUsedForMerge = true;
++		LiquidAmountToConsume = LiquidAmount;
++	}
++	internal void CheckBeingUsedForMerge(int x, int y, Tile tile, Tile tile2)
++	{
++		if (LiquidAmount <= 0)
++			return;
 +
-+		LiquidLoader.Merge(thisLiquidType, liquidNearby, ref liquidMergeTileType, ref liquidMergeType);
++		BeingUsedForMerge = LiquidLoader.AllowMergeLiquids(x, y, tile, X, Y, tile2);
++		if (BeingUsedForMerge)
++			LiquidAmountToConsume = LiquidAmount;
++	}
++	internal bool CausingMerge(int liquidType) => BeingUsedForMerge && LiquidType != liquidType;
++	public virtual void DeleteLiquid()
++	{
++		Tile.LiquidAmount = 0;
++		Tile.SetLiquid(LiquidID.Water, true);
++	}
++	public virtual byte ConsumeLiquid()
++	{
++		byte consumedAmount = Math.Min(Tile.LiquidAmount, LiquidAmountToConsume);
++		Tile.LiquidAmount -= consumedAmount;
++		if (Tile.LiquidAmount == 0)
++			Tile.SetLiquid(LiquidID.Water, true);
++
++		return consumedAmount;
++	}
++	public LiquidMergeIngredient(int x, int y)
++	{
++		X = x;
++		Y = y;
++		Tile = Main.tile[x, y];
++	}
++	public LiquidMergeIngredient(int x, int y, int liquidType, byte amount)
++	{
++		X = x;
++		Y = y;
++		Tile = Main.tile[x, y];
++	}
++}
++public class LiquidMergeIngredientTile : LiquidMergeIngredient
++{
++	public override byte LiquidAmount => Tile.LiquidAmount;
++	public override int LiquidType => Tile.LiquidType;
++	public LiquidMergeIngredientTile(int x, int y) : base(x, y) { }
++}
++/// <summary>
++/// Only used in WorldGen.PlaceLiquid()
++/// </summary>
++public class LiquidMergeIngredientBeingPlaced : LiquidMergeIngredient
++{
++	public override byte LiquidAmount => liquidAmount;
++	private byte liquidAmount;
++	public override int LiquidType => liquidType;
++	private int liquidType;
++	public override void DeleteLiquid()
++	{
++		liquidAmount = 0;
++		liquidType = LiquidID.Water;
++	}
++	public override byte ConsumeLiquid()
++	{
++		byte consumedAmount = Math.Min(liquidAmount, LiquidAmountToConsume);
++		liquidAmount -= consumedAmount;
++		if (liquidAmount == 0)
++			liquidType = LiquidID.Water;
++
++		return consumedAmount;
++	}
++	public LiquidMergeIngredientBeingPlaced(int x, int y, int liquidType, byte amount) : base(x, y)
++	{
++		liquidAmount = amount;
++		this.liquidType = liquidType;
++	}
++}
++public class LiquidMerge
++{
++	private enum MergeType
++	{
++		None,
++		TopMerge,
++		BottomMerge,
++		PlaceMerge
++	}
++	/// <summary>
++	/// Controls the sound played when a merge happens.
++	/// </summary>
++	public TileChangeType LiquidChangeType {
++		get {
++			if (!liquidChangeSoundDetermined && LiquidMergeType != LiquidMergeDefaultType) {
++				liquidChangeType = WorldGen.GetLiquidChangeType(ThisLiquidType, LiquidMergeType);
++				liquidChangeSoundDetermined = true;
++			}
++
++			return liquidChangeType;
++		}
++		set {
++			liquidChangeType = value;
++			liquidChangeSoundDetermined = true;
++		}
++	}
++	private TileChangeType liquidChangeType = TileChangeType.None;
++	bool liquidChangeSoundDetermined = false;
++	public int LiquidMergeTileType = LiquidMergeTileDefaultType;
++	private const int LiquidMergeTileDefaultType = -1;
++
++	public int LiquidMergeType = LiquidMergeDefaultType;
++	private const int LiquidMergeDefaultType = -1;
++
++	internal void GetLiquidMergeTypes()
++	{
++		Liquid.GetLiquidMergeTypes(ThisLiquidType, out LiquidMergeTileType, out LiquidMergeType, LiquidsNearby[LiquidID.Water], LiquidsNearby[LiquidID.Lava], LiquidsNearby[LiquidID.Honey], LiquidsNearby[LiquidID.Shimmer]);
++	}
++	public int X { get; private set; }
++	public int Y { get; private set; }
++	internal int ThisLiquidType => thisLiquid.Tile.LiquidType;
++	private LiquidMergeIngredient thisLiquid;
++	private LiquidMergeIngredient leftLiquid;
++	private LiquidMergeIngredient upLiquid;
++	private LiquidMergeIngredient rightLiquid;
++	private LiquidMergeIngredient downLiquid;
++	private Tile ThisTile => thisLiquid.Tile;
++	private Tile LeftTile => leftLiquid.Tile;
++	private Tile UpTile => upLiquid.Tile;
++	private Tile RightTile => rightLiquid.Tile;
++	private Tile DownTile => downLiquid.Tile;
++	public Tile MergeTargetTile { get; private set; }
++	public List<LiquidMergeIngredient> LiquidMergeIngredients { get; private set; } = null;
++	internal bool MergeAllowed => LiquidMergeIngredients != null && LiquidMergeIngredients.Count > 0;
++	private MergeType mergeType = MergeType.None;
++
++	/// <summary>
++	/// Check if a merge will occur and set the MergeTargetTile and LiquidMergeIngredients.
++	/// Shouldn't be called for a PlaceMerge.
++	/// </summary>
++	/// <returns>true if a merge will occur.</returns>
++	private bool DetermineMergeType()
++	{
++		//Check for top merge (Merge onto ThisTile from LeftTile, UpTile or RightTile)
++		leftLiquid.CheckBeingUsedForMerge(X, Y, ThisTile, LeftTile);
++		rightLiquid.CheckBeingUsedForMerge(X, Y, ThisTile, RightTile);
++		upLiquid.CheckBeingUsedForMerge(X, Y, ThisTile, UpTile);
++		bool topMerge = leftLiquid.CausingMerge(ThisLiquidType) || rightLiquid.CausingMerge(ThisLiquidType) || upLiquid.CausingMerge(ThisLiquidType);
++		if (topMerge) {
++			mergeType = MergeType.TopMerge;
++			LiquidMergeIngredients = new();
++			thisLiquid.SetBeingUsedForMerge();
++			LiquidMergeIngredients.Add(thisLiquid);
++
++			if (leftLiquid.BeingUsedForMerge)
++				LiquidMergeIngredients.Add(leftLiquid);
++
++			if (rightLiquid.BeingUsedForMerge)
++				LiquidMergeIngredients.Add(rightLiquid);
++
++			if (upLiquid.BeingUsedForMerge)
++				LiquidMergeIngredients.Add(upLiquid);
++
++			return true;
++		}
++
++		//Check for bottom merge (ThisTile merging onto DownTile)
++		Y = downLiquid.Y;//Bottom merges cause a merge to happen at the DownTile, using ThisTile as an ingredient, so change the target of the merge to the DownTile.
++		thisLiquid.CheckBeingUsedForMerge(X, Y, DownTile, ThisTile);
++		bool bottomMerge = thisLiquid.CausingMerge(downLiquid.LiquidType);
++		if (bottomMerge) {
++			mergeType = MergeType.BottomMerge;
++			LiquidMergeIngredients = new();
++			downLiquid.SetBeingUsedForMerge();
++			LiquidMergeIngredients.Add(downLiquid);
++
++			if (thisLiquid.BeingUsedForMerge)
++				LiquidMergeIngredients.Add(downLiquid);
++
++			return true;
++		}
++
++		return false;
++	}
++	public bool[] LiquidsNearby {
++		get {
++			if (liquidsNearby == null) {
++				UpdateLiquidsNearby();
++			}
++
++			return liquidsNearby;
++		}
++	}
++	private bool[] liquidsNearby = null;
++	public void UpdateLiquidsNearby()
++	{
++		liquidsNearby = new bool[LiquidLoader.LiquidCount];
++		foreach (LiquidMergeIngredient liquidMergeIngredient in LiquidMergeIngredients) {
++			liquidsNearby[liquidMergeIngredient.LiquidType] = true;
++		}
++	}
++	public int[] LiquidsNearbyAmounts {
++		get {
++			if (liquidsNearbyAmount == null) {
++				UpdateLiquidsNearbyAmounts();
++			}
++
++			return liquidsNearbyAmount;
++		}
++	}
++	private int[] liquidsNearbyAmount = null;
++	public void UpdateLiquidsNearbyAmounts()
++	{
++		liquidsNearbyAmount = new int[LiquidLoader.LiquidCount];
++		foreach (LiquidMergeIngredient liquidMergeIngredient in LiquidMergeIngredients) {
++			liquidsNearbyAmount[liquidMergeIngredient.LiquidType] += liquidMergeIngredient.LiquidAmount;
++		}
++	}
++	public void ClearLiquidsNearby()
++	{
++		liquidsNearby = null;
++		liquidsNearbyAmount = null;
++	}
++	public void DeleteLiquids()
++	{
++		for (int i = 1; i < LiquidMergeIngredients.Count; i++) {
++			LiquidMergeIngredient liquidMergeIngredient = LiquidMergeIngredients[i];
++			liquidMergeIngredient.DeleteLiquid();
++		}
++	}
++	public bool MergeTargetTileWillBeDestroyedByMerge => mergeType == MergeType.TopMerge && WillBeDestroyedByObsidianKill || mergeType == MergeType.BottomMerge && (WillBeDestroyedByCut || WillBeDestroyedByObsidianKill);
++	private bool WillBeDestroyedByObsidianKill => MergeTargetTile.HasTile && Main.tileObsidianKill[MergeTargetTile.TileType];
++	private bool WillBeDestroyedByCut => ThisLiquidType != LiquidID.Water && Main.tileCut[MergeTargetTile.TileType];
++	private void TryKillMergeTargetTile()
++	{
++		if (!MergeTargetTileWillBeDestroyedByMerge)
++			return;
++
++		if (mergeType == MergeType.BottomMerge && WillBeDestroyedByCut) {
++			WorldGen.KillTile(X, Y);
++			if (Main.netMode == 2)
++				NetMessage.SendData(17, -1, -1, null, 0, X, Y);
++
++			return;
++		}
++
++		WorldGen.KillTile(X, Y);
++		if (Main.netMode == 2)
++			NetMessage.SendData(17, -1, -1, null, 0, X, Y);
++	}
++	private void PlaceMergeTile()
++	{
++		switch (mergeType) {
++			case MergeType.TopMerge:
++				if (!WorldGen.gen)
++					WorldGen.PlayLiquidChangeSound(liquidChangeType, X, Y);
++
++				WorldGen.PlaceTile(X, Y, LiquidMergeTileType, mute: true, forced: true);
++				WorldGen.SquareTileFrame(X, Y);
++				if (Main.netMode == 2)
++					NetMessage.SendTileSquare(-1, X - 1, Y - 1, 3, liquidChangeType);
++				break;
++			case MergeType.BottomMerge:
++				if (!Main.gameMenu)
++					WorldGen.PlayLiquidChangeSound(liquidChangeType, X, Y - 1);
++
++				WorldGen.PlaceTile(X, Y, LiquidMergeTileType, mute: true, forced: true);
++				WorldGen.SquareTileFrame(X, Y);
++				if (Main.netMode == 2)
++					NetMessage.SendTileSquare(-1, X - 1, Y - 1, 3, liquidChangeType);
++				break;
++			case MergeType.PlaceMerge:
++				WorldGen.PlaceTile(X, Y, LiquidMergeTileType, mute: true);
++				WorldGen.SquareTileFrame(X, Y);
++				if (Main.netMode != 0)
++					NetMessage.SendTileSquare(-1, X - 1, Y - 1, liquidChangeType);
++
++				break;
++		}
++	}
++	public bool Merge(out Dictionary<int, int> consumedLiquids)
++	{
++		TryKillMergeTargetTile();
++		consumedLiquids = new();
++		for (int i = 1; i < LiquidMergeIngredients.Count; i++) {
++			LiquidMergeIngredient liquidMergeIngredient = LiquidMergeIngredients[i];
++			int liquidType = liquidMergeIngredient.LiquidType;
++			int consumedAmount = liquidMergeIngredient.ConsumeLiquid();
++			if (consumedLiquids.ContainsKey(liquidType)) {
++				consumedLiquids[liquidType] += consumedAmount;
++			}
++			else {
++				consumedLiquids.Add(liquidType, consumedAmount);
++			}
++		}
++
++		if (MergeTargetTile.HasTile)
++			return false;
++
++		LiquidMergeIngredient thisLiquidMergeIngredient = LiquidMergeIngredients[0];
++		int thisLiquidType = thisLiquidMergeIngredient.LiquidType;
++		int thisConsumedAmount = thisLiquidMergeIngredient.LiquidAmountToConsume;
++		thisLiquidMergeIngredient.ConsumeLiquid();
++		if (consumedLiquids.ContainsKey(thisLiquidType)) {
++			consumedLiquids[thisLiquidType] += thisConsumedAmount;
++		}
++		else {
++			consumedLiquids.Add(thisLiquidType, thisConsumedAmount);
++		}
++
++		PlaceMergeTile();
++
++		return true;
++	}
++	public void TryMerge()
++	{
++		if (MergeAllowed) {
++			GetLiquidMergeTypes();
++			LiquidLoader.GetLiquidMergeTypes(X, Y, ThisLiquidType, LiquidsNearby, ref LiquidMergeTileType, ref LiquidMergeType, this);
++			int totalOtherLiquids = 0;
++			for (int i = 1; i < LiquidMergeIngredients.Count; i++) {
++				LiquidMergeIngredient liquidMergeIngredient = LiquidMergeIngredients[i];
++				totalOtherLiquids += liquidMergeIngredient.LiquidAmountToConsume;
++			}
++
++			bool deleteLiquids = totalOtherLiquids < 24 || ThisLiquidType == LiquidMergeType;
++			if (deleteLiquids && LiquidLoader.ShouldDeleteLiquid(this)) {
++				DeleteLiquids();
++				return;
++			}
++
++			ClearLiquidsNearby();
++
++			if (LiquidLoader.PreventMerge(this))
++				return;
++
++			ClearLiquidsNearby();
++
++			Merge(out Dictionary<int, int> consumedLiquids);
++			LiquidLoader.OnMerge(this, consumedLiquids);
++		}
++	}
++	internal void TryPlaceMerge()
++	{
++		if (MergeAllowed) {
++			GetLiquidMergeTypes();
++			LiquidLoader.GetLiquidMergeTypes(X, Y, ThisLiquidType, LiquidsNearby, ref LiquidMergeTileType, ref LiquidMergeType, this);
++
++			if (LiquidMergeTileType != 0) {
++				if (LiquidLoader.PreventMerge(this))
++					return;
++
++				ClearLiquidsNearby();
++
++				Merge(out Dictionary<int, int> consumedLiquids);
++				LiquidLoader.OnMerge(this, consumedLiquids);
++			}
++		}
++	}
++	public LiquidMerge(int x, int y)
++	{
++		X = x;
++		Y = y;
++		thisLiquid = new LiquidMergeIngredientTile(x, y);
++		leftLiquid = new LiquidMergeIngredientTile(x - 1, y);
++		rightLiquid = new LiquidMergeIngredientTile(x + 1, y);
++		upLiquid = new LiquidMergeIngredientTile(x, y - 1);
++		downLiquid = new LiquidMergeIngredientTile(x, y + 1);
++		DetermineMergeType();
++	}
++
++	/// <summary>
++	/// Only used in WorldGen.PlaceLiquid(int x, int y, byte liquidType, byte amount)
++	/// </summary>
++	/// <param name="x"></param>
++	/// <param name="y"></param>
++	/// <param name="liquidType"></param>
++	/// <param name="amount"></param>
++	public LiquidMerge(int x, int y, int liquidType, byte amount)
++	{
++		X = x;
++		Y = y;
++		thisLiquid = new LiquidMergeIngredientTile(x, y);
++		LiquidMergeIngredientBeingPlaced liquidBeingPlaced = new(x, y, liquidType, amount);
++		LiquidMergeIngredients = new();
++		thisLiquid.SetBeingUsedForMerge();
++		LiquidMergeIngredients.Add(thisLiquid);
++		liquidBeingPlaced.SetBeingUsedForMerge();
++		LiquidMergeIngredients.Add(liquidBeingPlaced);
++		mergeType = MergeType.PlaceMerge;
  	}
- 
- 	public static void LavaCheck(int x, int y)
+ }
