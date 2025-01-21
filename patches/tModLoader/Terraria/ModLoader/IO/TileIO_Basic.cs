@@ -16,6 +16,7 @@ internal static partial class TileIO
 		public PosData<ushort>[] unloadedEntryLookup;
 
 		public List<ushort> unloadedTypes = new List<ushort>();
+		internal List<ushort> vanillaTypes = new List<ushort>(4);
 
 		protected IOImpl(string entriesKey, string dataKey)
 		{
@@ -34,7 +35,7 @@ internal static partial class TileIO
 			var entries = Enumerable.Repeat<TEntry>(null, LoadedBlockCount).ToList();
 			// Create entries for all loaded tiles (vanilla included?), and store in entries list.
 			foreach (var block in LoadedBlocks) {
-				if (!unloadedTypes.Contains(block.Type)) {
+				if (!unloadedTypes.Contains(block.Type) && vanillaTypes.Contains(block.Type)) {
 					entries[block.Type] = ConvertBlockToEntry(block);
 				}
 			}

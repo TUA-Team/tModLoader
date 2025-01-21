@@ -294,6 +294,18 @@
  	public static UIManageControls ManageControlsMenu = new UIManageControls();
  	public static UIAchievementsMenu AchievementsMenu = new UIAchievementsMenu();
  	public static int maxRain = 750;
+@@ -717,8 +_,9 @@
+ 	public const int maxLiquidTypes = 15;
+ 	public static float cameraX;
+ 	public static bool drewLava;
+-	public static float[] liquidAlpha = new float[15];
+-	public static int waterStyle;
++	public static float[] liquidAlpha { get => LiquidAlpha[0]; set => LiquidAlpha[0] = value; }
++	//public static int waterStyle;
++	public static int waterStyle { get => LiquidStyle[0]; set => LiquidStyle[0] = value; }
+ 	public static int WorldRollingBackupsCountToKeep = 2;
+ 	private static bool TOWMusicUnlocked = false;
+ 	private static bool swapMusic = false;
 @@ -727,6 +_,8 @@
  	public static int dungeonY;
  	public static Liquid[] liquid = new Liquid[Liquid.maxLiquid];
@@ -6024,6 +6036,16 @@
  								}
  								else if ((color4.R > num4 || (double)(int)color4.G > (double)num4 * 1.1 || (double)(int)color4.B > (double)num4 * 1.2) && !tile[num24, num25].active() && WallLightAt(num24, num25) && ugBackTransition == 0f) {
  									Lighting.GetColor9Slice(num24, num25, ref slices);
+@@ -45297,7 +_,8 @@
+ 		spriteBatch.Begin();
+ 		tileBatch.Begin();
+ 		try {
+-			DrawWaters(isBackground: true);
++			// DrawWaters(isBackground: true);
++			for(int i = 0; i < LiquidLoader.LiquidCount; i++) DrawWaters(isBackground: false, i);
+ 		}
+ 		catch {
+ 		}
 @@ -45726,6 +_,7 @@
  			num25 *= num5;
  			num = 0f - num24 + (float)(screenWidth / 2);
@@ -6117,6 +6139,54 @@
  		Asset<Texture2D> asset = TextureAssets.MapBGs[0];
  		int num = -1;
  		Microsoft.Xna.Framework.Color color = Microsoft.Xna.Framework.Color.White;
+@@ -46974,8 +_,15 @@
+ 		spriteBatch.End();
+ 		tileBatch.Begin();
+ 		spriteBatch.Begin();
++		/*
+ 		if (biome == null)
+ 			DrawLiquid(bg: true, waterStyle);
++		*/
++		if (biome == null) {
++			for (int i = 0; i < LiquidStyle.Length; i++) {
++				DrawLiquid(bg: true, LiquidStyle[i]);
++			}
++		}
+ 		else
+ 			DrawLiquid(bg: true, bloodMoon ? 9 : biome.WaterStyle);
+ 
+@@ -47097,8 +_,15 @@
+ 
+ 		tileBatch.Begin();
+ 		spriteBatch.Begin();
++		/*
+ 		if (biome == null)
+ 			DrawLiquid(bg: false, waterStyle);
++		*/
++		if (biome == null) {
++			for (int i = 0; i < LiquidStyle.Length; i++) {
++				DrawLiquid(bg: false, LiquidStyle[i]);
++			}
++		}
+ 		else
+ 			DrawLiquid(bg: false, biome.WaterStyle);
+ 
+@@ -47210,8 +_,14 @@
+ 		}
+ 	}
+ 
+-	public static int CalculateWaterStyle(bool ignoreFountains = false)
++	// public static int CalculateWaterStyle(bool ignoreFountains = false)
++	public static int CalculateWaterStyle(bool ignoreFountains = false, int liquid = 0)
+ 	{
++		if (liquid != 0) {
++			LoaderManager.Get<LiquidStyleLoader>().ChooseStyle(liquid, out var liquidStyle, out var priority);
++			return liquidStyle;
++		}
++			
+ 		if (SceneMetrics.ActiveFountainColor >= 0 && !ignoreFountains)
+ 			return SceneMetrics.ActiveFountainColor;
+ 
 @@ -47244,6 +_,12 @@
  			case 4:
  				return 13;
@@ -6130,51 +6200,114 @@
  				if (remixWorld) {
  					if ((double)(screenPosition.Y / 16f) > rockLayer)
  						return 7;
-@@ -47271,6 +_,10 @@
+@@ -47266,27 +_,41 @@
+ 		}
+ 	}
+ 
+-	public static bool IsLiquidStyleWater(int liquidStyle)
++	// public static bool IsLiquidStyleWater(int liquidStyle)
++	public static bool IsLiquidStyleWater(int liquidStyle, int liquidType = 0)
+ 	{
  		if (liquidStyle != 1)
  			return liquidStyle != 11;
  
 +		// Currently all modded liquid styles come from WaterStylesLoader
-+		if (liquidStyle >= maxLiquidTypes)			
++		if (liquidStyle >= maxLiquidTypes || liquidType > 0)			
 +			return true;
 +
  		return false;
  	}
  
-@@ -47281,12 +_,15 @@
- 			waterStyle = CalculateWaterStyle();
- 			for (int i = 0; i < 15; i++) {
- 				if (IsLiquidStyleWater(waterStyle)) {
++	private void DrawWaters(bool isBackground = false, int Liquid = 0)
+-	private void DrawWaters(bool isBackground = false)
++	// private void DrawWaters(bool isBackground = false)
+ 	{
+ 		drewLava = false;
+ 		if (!isBackground) {
+-			waterStyle = CalculateWaterStyle();
+-			for (int i = 0; i < 15; i++) {
+-				if (IsLiquidStyleWater(waterStyle)) {
++			// waterStyle = CalculateWaterStyle();
++			LiquidStyle[Liquid] = CalculateWaterStyle(liquid: Liquid);
++			if(Liquid > 0)
++				LoaderManager.Get<LiquidStyleLoader>().IsLiquidActive(Liquid);
++			for (int i = 0; i < Main.LiquidAlpha[Liquid].Length; i++) {
++				// if (IsLiquidStyleWater(waterStyle)) {
++				if (IsLiquidStyleWater(waterStyle, Liquid)) {
 +					// Extra patch context.
  					if (waterStyle != i)
- 						liquidAlpha[i] = Math.Max(liquidAlpha[i] - 0.2f, 0f);
+-						liquidAlpha[i] = Math.Max(liquidAlpha[i] - 0.2f, 0f);
++						LiquidAlpha[Liquid][i] = Math.Max(LiquidAlpha[Liquid][i] - 0.2f, 0f);
  					else
- 						liquidAlpha[i] = Math.Min(liquidAlpha[i] + 0.2f, 1f);
+-						liquidAlpha[i] = Math.Min(liquidAlpha[i] + 0.2f, 1f);
++						LiquidAlpha[Liquid][i] = Math.Min(LiquidAlpha[Liquid][i] + 0.2f, 1f);
  				}
  			}
 +
 +			LoaderManager.Get<WaterStylesLoader>().UpdateLiquidAlphas();
++			LoaderManager.Get<LiquidStyleLoader>().UpdateLiquidAlphas(Liquid);
  		}
  
  		if (!drawToScreen && !isBackground) {
-@@ -47304,7 +_,7 @@
+@@ -47303,24 +_,52 @@
+ 			LiquidRenderer.Instance.PrepareDraw(drawArea);
  		}
  
++		for (int j = 0; j < LiquidLoader.LiquidCount; j++) {
++			bool flag = false;
++			/*if (j < 4) {
++				for (int k = 0; k < LoaderManager.Get<WaterStylesLoader>().TotalCount; k++) {
++					if (IsLiquidStyleWater(k) && liquidAlpha[k] > 0f && j != LiquidStyle[k]) {
++						DrawLiquid(isBackground, k, isBackground ? 1f : liquidAlpha[k], drawSinglePassLiquids: false);
++						flag = true;
++					}
++				}
++
++				DrawLiquid(isBackground, waterStyle, flag ? liquidAlpha[waterStyle] : 1f);
++				continue;
++			}
++			*/
++			for (int k = 0; k < LiquidLoader.liquids[j].LiquidStyleCount; k++) {
++				if (IsLiquidStyleWater(k, j) && liquidAlpha[k] > 0f && k != LiquidStyle[k]) {
++					DrawLiquid(isBackground, k, isBackground ? 1f : liquidAlpha[LiquidStyle[j]], drawSinglePassLiquids: false);
++					flag = true;
++				}
++			}
++
++			DrawLiquid(isBackground, LiquidStyle[j], flag ? liquidAlpha[LiquidStyle[j]] : 1f);
++		}
++
++		/*
  		bool flag = false;
 -		for (int j = 0; j < 15; j++) {
 +		for (int j = 0; j < LoaderManager.Get<WaterStylesLoader>().TotalCount; j++) {
- 			if (IsLiquidStyleWater(j) && liquidAlpha[j] > 0f && j != waterStyle) {
+-			if (IsLiquidStyleWater(j) && liquidAlpha[j] > 0f && j != waterStyle) {
++			// if (IsLiquidStyleWater(j) && liquidAlpha[j] > 0f && j != waterStyle) {
++			if (IsLiquidStyleWater(j) && liquidAlpha[j] > 0f && j != LiquidStyle[Liquid]) {
  				DrawLiquid(isBackground, j, isBackground ? 1f : liquidAlpha[j], drawSinglePassLiquids: false);
  				flag = true;
-@@ -47314,7 +_,7 @@
- 		DrawLiquid(isBackground, waterStyle, flag ? liquidAlpha[waterStyle] : 1f);
+ 			}
+ 		}
+-
+-		DrawLiquid(isBackground, waterStyle, flag ? liquidAlpha[waterStyle] : 1f);
++		*/
++		// DrawLiquid(isBackground, waterStyle, flag ? liquidAlpha[waterStyle] : 1f);
++		// DrawLiquid(isBackground, LiquidStyle[Liquid], flag ? liquidAlpha[waterStyle] : 1f);
  	}
  
 -	protected void DrawLiquid(bool bg = false, int waterStyle = 0, float Alpha = 1f, bool drawSinglePassLiquids = true)
 +	protected internal void DrawLiquid(bool bg = false, int waterStyle = 0, float Alpha = 1f, bool drawSinglePassLiquids = true)
  	{
++		/*
  		if (!Lighting.NotRetro) {
  			oldDrawWater(bg, waterStyle, Alpha);
+ 			return;
+ 		}
+-
++		*/
+ 		Stopwatch stopwatch = new Stopwatch();
+ 		stopwatch.Start();
+ 		Vector2 drawOffset = (drawToScreen ? Vector2.Zero : new Vector2(offScreenRange, offScreenRange)) - screenPosition;
 @@ -48744,18 +_,33 @@
  		}
  	}

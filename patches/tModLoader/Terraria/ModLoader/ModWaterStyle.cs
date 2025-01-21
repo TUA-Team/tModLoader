@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using ReLogic.Content;
@@ -9,7 +10,7 @@ namespace Terraria.ModLoader;
 /// <summary>
 /// Represents a style of water that gets drawn, based on factors such as the background. This is used to determine the color of the water, as well as other things as determined by the hooks below.
 /// </summary>
-[Autoload(Side = ModSide.Client)]
+[Autoload(Side = ModSide.Client), Obsolete("Use ModLiquidStyle")]
 public abstract class ModWaterStyle : ModTexturedType
 {
 	/// <summary>
@@ -98,7 +99,7 @@ public abstract class ModWaterStyle : ModTexturedType
 /// <summary>
 /// Represents a style of waterfalls that gets drawn. This is mostly used to determine the color of the waterfall.
 /// </summary>
-[Autoload(Side = ModSide.Client)]
+[Autoload(Side = ModSide.Client), Obsolete("Use ModLiquidStyle")]
 public abstract class ModWaterfallStyle : ModTexturedType
 {
 	/// <summary>

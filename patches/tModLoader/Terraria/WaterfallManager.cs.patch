@@ -1,6 +1,10 @@
 --- src/TerrariaNetCore/Terraria/WaterfallManager.cs
 +++ src/tModLoader/Terraria/WaterfallManager.cs
-@@ -5,6 +_,7 @@
+@@ -2,9 +_,11 @@
+ using Microsoft.Xna.Framework;
+ using Microsoft.Xna.Framework.Graphics;
+ using ReLogic.Content;
++using Terraria.GameContent;
  using Terraria.GameContent.Liquid;
  using Terraria.ID;
  using Terraria.IO;
@@ -8,6 +12,17 @@
  
  namespace Terraria;
  
+@@ -12,6 +_,10 @@
+ {
+ 	public struct WaterfallData
+ 	{
++		/// <summary>
++		/// Added by tML, used to assign a liquid type
++		/// </summary>
++		public int liquidType;
+ 		public int x;
+ 		public int y;
+ 		public int type;
 @@ -21,12 +_,12 @@
  	private const int minWet = 160;
  	private const int maxWaterfallCountDefault = 1000;
@@ -23,28 +38,258 @@
  	private int wFallFrCounter;
  	private int regularFrame;
  	private int wFallFrCounter2;
-@@ -218,7 +_,7 @@
+@@ -130,6 +_,7 @@
+ 
+ 						if ((tile3.liquid > 160 || tile4.liquid > 160) && ((tile3.liquid == 0 && !WorldGen.SolidTile(tile3) && tile3.slope() == 0) || (tile4.liquid == 0 && !WorldGen.SolidTile(tile4) && tile4.slope() == 0)) && currentMax < qualityMax) {
+ 							waterfalls[currentMax].type = 0;
++							/*
+ 							if (tile2.lava() || tile4.lava() || tile3.lava())
+ 								waterfalls[currentMax].type = 1;
+ 							else if (tile2.honey() || tile4.honey() || tile3.honey())
+@@ -138,6 +_,20 @@
+ 								waterfalls[currentMax].type = 25;
+ 							else
+ 								waterfalls[currentMax].type = 0;
++							*/
++
++							if (tile2.LiquidType != 0) {
++								waterfalls[currentMax].liquidType = tile2.LiquidType;
++								waterfalls[currentMax].type = Main.LiquidStyle[tile2.LiquidType];
++							}
++							else if (tile4.LiquidType != 0) {
++								waterfalls[currentMax].liquidType = tile4.LiquidType;
++								waterfalls[currentMax].type = Main.LiquidStyle[tile4.LiquidType];
++							}
++							else if (tile3.LiquidType != 0) {
++								waterfalls[currentMax].liquidType = tile3.LiquidType;
++								waterfalls[currentMax].type = Main.LiquidStyle[tile3.LiquidType];
++							}
+ 
+ 							waterfalls[currentMax].x = i;
+ 							waterfalls[currentMax].y = j;
+@@ -218,7 +_,8 @@
  		}
  	}
  
++	internal void DrawWaterfall(int Style = 0, float Alpha = 1f, int Liquid = 0)
 -	private void DrawWaterfall(int Style = 0, float Alpha = 1f)
-+	internal void DrawWaterfall(int Style = 0, float Alpha = 1f)
++	// internal void DrawWaterfall(int Style = 0, float Alpha = 1f)
  	{
  		Main.tileSolid[546] = false;
  		float num = 0f;
-@@ -480,8 +_,12 @@
+@@ -233,6 +_,7 @@
+ 		int num10 = -1;
+ 		for (int i = 0; i < currentMax; i++) {
+ 			int num11 = 0;
++			int liquidType = waterfalls[i].liquidType;
+ 			int num12 = waterfalls[i].type;
+ 			int num13 = waterfalls[i].x;
+ 			int num14 = waterfalls[i].y;
+@@ -245,6 +_,7 @@
+ 			int num21;
+ 			int num22;
+ 			if (num12 == 1 || num12 == 14 || num12 == 25) {
++				// num12 = 0;
+ 				if (Main.drewLava || waterfalls[i].stopAtStep == 0)
+ 					continue;
+ 
+@@ -350,7 +_,8 @@
+ 						continue;
+ 					}
+ 					case 0:
++						if(liquidType == 0)
+-						num12 = Style;
++							num12 = Style;
+ 						break;
+ 					case 2:
+ 						if (Main.drewLava)
+@@ -455,7 +_,7 @@
+ 				}
+ 
+ 				if (num29 >= 2) {
+-					num17 *= -1;
++					num17 *= -2;
+ 					num32 *= -1;
+ 				}
+ 
+@@ -479,10 +_,15 @@
+ 					case 266:
  					case 267:
  					case 268:
++						if(liquidType != 0) break;
  						num12 = 15 + num34 - 262;
 +						// Patch note: ^ Both are used below.
  						break;
  				}
-+
+-
++				
 +				if (num34 != -1)
 +					TileLoader.ChangeWaterfallStyle(num34, ref num12);
- 
++				
  				Color color5 = Lighting.GetColor(num13, num14);
  				if (k > 50)
+ 					TrySparkling(num13, num14, num17, color5);
+@@ -534,9 +_,9 @@
+ 				if (flag2 && num17 != num31) {
+ 					int num44 = 2;
+ 					if (num31 == 1)
+-						DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16 - 16, num14 * 16 + 16 - num44) - Main.screenPosition, new Rectangle(num21, 24, 32, 16 - num43 - num44), color5, SpriteEffects.FlipHorizontally);
++						DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16 - 16, num14 * 16 + 16 - num44) - Main.screenPosition, new Rectangle(num21, 24, 32, 16 - num43 - num44), color5, SpriteEffects.FlipHorizontally, liquidType);
+ 					else
+-						DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16 + 16 - num44) - Main.screenPosition, new Rectangle(num21, 24, 32, 16 - num43 - num44), color5, SpriteEffects.None);
++						DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16 + 16 - num44) - Main.screenPosition, new Rectangle(num21, 24, 32, 16 - num43 - num44), color5, SpriteEffects.None, liquidType);
+ 				}
+ 
+ 				if (num15 == 0 && num30 != 0 && num16 == 1 && num17 != num18) {
+@@ -544,70 +_,70 @@
+ 					num17 = num18;
+ 					color5 = Color.White;
+ 					if (num17 == 1)
+-						DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16 - 16, num14 * 16 + 16) - Main.screenPosition, new Rectangle(num21, 24, 32, 16 - num43), color5, SpriteEffects.FlipHorizontally);
++						DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16 - 16, num14 * 16 + 16) - Main.screenPosition, new Rectangle(num21, 24, 32, 16 - num43), color5, SpriteEffects.FlipHorizontally, liquidType);
+ 					else
+-						DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16 - 16, num14 * 16 + 16) - Main.screenPosition, new Rectangle(num21, 24, 32, 16 - num43), color5, SpriteEffects.FlipHorizontally);
++						DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16 - 16, num14 * 16 + 16) - Main.screenPosition, new Rectangle(num21, 24, 32, 16 - num43), color5, SpriteEffects.FlipHorizontally, liquidType);
+ 				}
+ 
+ 				if (num19 != 0 && num32 == 0 && num33 == 1) {
+ 					if (num17 == 1) {
+ 						if (num20 != num12)
+-							DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16 + num11 + 8) - Main.screenPosition, new Rectangle(num21, 0, 16, 16 - num43 - 8), color4, SpriteEffects.FlipHorizontally);
++							DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16 + num11 + 8) - Main.screenPosition, new Rectangle(num21, 0, 16, 16 - num43 - 8), color4, SpriteEffects.FlipHorizontally, liquidType);
+ 						else
+-							DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16 + num11 + 8) - Main.screenPosition, new Rectangle(num21, 0, 16, 16 - num43 - 8), color5, SpriteEffects.FlipHorizontally);
++							DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16 + num11 + 8) - Main.screenPosition, new Rectangle(num21, 0, 16, 16 - num43 - 8), color5, SpriteEffects.FlipHorizontally, liquidType);
+ 					}
+ 					else {
+-						DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16 + num11 + 8) - Main.screenPosition, new Rectangle(num21, 0, 16, 16 - num43 - 8), color5, SpriteEffects.None);
++						DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16 + num11 + 8) - Main.screenPosition, new Rectangle(num21, 0, 16, 16 - num43 - 8), color5, SpriteEffects.None, liquidType);
+ 					}
+ 				}
+ 
+ 				if (num11 == 8 && num16 == 1 && num19 == 0) {
+ 					if (num18 == -1) {
+ 						if (num20 != num12)
+-							DrawWaterfall(num20, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16) - Main.screenPosition, new Rectangle(num21, 24, 32, 8), color4, SpriteEffects.None);
++							DrawWaterfall(num20, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16) - Main.screenPosition, new Rectangle(num21, 24, 32, 8), color4, SpriteEffects.None, liquidType);
+ 						else
+-							DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16) - Main.screenPosition, new Rectangle(num21, 24, 32, 8), color5, SpriteEffects.None);
++							DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16) - Main.screenPosition, new Rectangle(num21, 24, 32, 8), color5, SpriteEffects.None, liquidType);
+ 					}
+ 					else if (num20 != num12) {
+-						DrawWaterfall(num20, num13, num14, alpha, new Vector2(num13 * 16 - 16, num14 * 16) - Main.screenPosition, new Rectangle(num21, 24, 32, 8), color4, SpriteEffects.FlipHorizontally);
++						DrawWaterfall(num20, num13, num14, alpha, new Vector2(num13 * 16 - 16, num14 * 16) - Main.screenPosition, new Rectangle(num21, 24, 32, 8), color4, SpriteEffects.FlipHorizontally, liquidType);
+ 					}
+ 					else {
+-						DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16 - 16, num14 * 16) - Main.screenPosition, new Rectangle(num21, 24, 32, 8), color5, SpriteEffects.FlipHorizontally);
++						DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16 - 16, num14 * 16) - Main.screenPosition, new Rectangle(num21, 24, 32, 8), color5, SpriteEffects.FlipHorizontally, liquidType);
+ 					}
+ 				}
+ 
+ 				if (num30 != 0 && num15 == 0) {
+ 					if (num31 == 1) {
+ 						if (num20 != num12)
+-							DrawWaterfall(num20, num13, num14, alpha, new Vector2(num13 * 16 - 16, num14 * 16) - Main.screenPosition, new Rectangle(num21, 24, 32, 16 - num43), color4, SpriteEffects.FlipHorizontally);
++							DrawWaterfall(num20, num13, num14, alpha, new Vector2(num13 * 16 - 16, num14 * 16) - Main.screenPosition, new Rectangle(num21, 24, 32, 16 - num43), color4, SpriteEffects.FlipHorizontally, liquidType);
+ 						else
+-							DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16 - 16, num14 * 16) - Main.screenPosition, new Rectangle(num21, 24, 32, 16 - num43), color5, SpriteEffects.FlipHorizontally);
++							DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16 - 16, num14 * 16) - Main.screenPosition, new Rectangle(num21, 24, 32, 16 - num43), color5, SpriteEffects.FlipHorizontally, liquidType);
+ 					}
+ 					else if (num20 != num12) {
+-						DrawWaterfall(num20, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16) - Main.screenPosition, new Rectangle(num21, 24, 32, 16 - num43), color4, SpriteEffects.None);
++						DrawWaterfall(num20, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16) - Main.screenPosition, new Rectangle(num21, 24, 32, 16 - num43), color4, SpriteEffects.None, liquidType);
+ 					}
+ 					else {
+-						DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16) - Main.screenPosition, new Rectangle(num21, 24, 32, 16 - num43), color5, SpriteEffects.None);
++						DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16) - Main.screenPosition, new Rectangle(num21, 24, 32, 16 - num43), color5, SpriteEffects.None, liquidType);
+ 					}
+ 				}
+ 
+ 				if (num33 == 1 && num30 == 0 && num19 == 0) {
+ 					if (num17 == -1) {
+ 						if (num16 == 0)
+-							DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16 + num11) - Main.screenPosition, new Rectangle(num21, 0, 16, 16 - num43), color5, SpriteEffects.None);
++							DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16 + num11) - Main.screenPosition, new Rectangle(num21, 0, 16, 16 - num43), color5, SpriteEffects.None, liquidType);
+ 						else if (num20 != num12)
+-							DrawWaterfall(num20, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16) - Main.screenPosition, new Rectangle(num21, 24, 32, 16 - num43), color4, SpriteEffects.None);
++							DrawWaterfall(num20, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16) - Main.screenPosition, new Rectangle(num21, 24, 32, 16 - num43), color4, SpriteEffects.None, liquidType);
+ 						else
+-							DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16) - Main.screenPosition, new Rectangle(num21, 24, 32, 16 - num43), color5, SpriteEffects.None);
++							DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16) - Main.screenPosition, new Rectangle(num21, 24, 32, 16 - num43), color5, SpriteEffects.None, liquidType);
+ 					}
+ 					else if (num16 == 0) {
+-						DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16 + num11) - Main.screenPosition, new Rectangle(num21, 0, 16, 16 - num43), color5, SpriteEffects.FlipHorizontally);
++						DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16 + num11) - Main.screenPosition, new Rectangle(num21, 0, 16, 16 - num43), color5, SpriteEffects.FlipHorizontally, liquidType);
+ 					}
+ 					else if (num20 != num12) {
+-						DrawWaterfall(num20, num13, num14, alpha, new Vector2(num13 * 16 - 16, num14 * 16) - Main.screenPosition, new Rectangle(num21, 24, 32, 16 - num43), color4, SpriteEffects.FlipHorizontally);
++						DrawWaterfall(num20, num13, num14, alpha, new Vector2(num13 * 16 - 16, num14 * 16) - Main.screenPosition, new Rectangle(num21, 24, 32, 16 - num43), color4, SpriteEffects.FlipHorizontally, liquidType);
+ 					}
+ 					else {
+-						DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16 - 16, num14 * 16) - Main.screenPosition, new Rectangle(num21, 24, 32, 16 - num43), color5, SpriteEffects.FlipHorizontally);
++						DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16 - 16, num14 * 16) - Main.screenPosition, new Rectangle(num21, 24, 32, 16 - num43), color5, SpriteEffects.FlipHorizontally, liquidType);
+ 					}
+ 				}
+ 				else {
+@@ -624,7 +_,7 @@
+ 									if (num15 == 0 && m < 2)
+ 										num50 = 4;
+ 
+-									DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16 + num48, num14 * 16 + num11 + num50) - Main.screenPosition, new Rectangle(16 + num21 + num49, 0, 2, 16 - num11), color5, SpriteEffects.FlipHorizontally);
++									DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16 + num48, num14 * 16 + num11 + num50) - Main.screenPosition, new Rectangle(16 + num21 + num49, 0, 2, 16 - num11), color5, SpriteEffects.FlipHorizontally, liquidType);
+ 								}
+ 							}
+ 							else {
+@@ -634,7 +_,7 @@
+ 								else if (TileID.Sets.BlocksWaterDrawingBehindSelf[Main.tile[num13, num14 + 1].type])
+ 									height2 = 8;
+ 
+-								DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16 + num11) - Main.screenPosition, new Rectangle(16 + num21, 0, 16, height2), color5, SpriteEffects.FlipHorizontally);
++								DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16 + num11) - Main.screenPosition, new Rectangle(16 + num21, 0, 16, height2), color5, SpriteEffects.FlipHorizontally, liquidType);
+ 							}
+ 							break;
+ 						case -1:
+@@ -649,7 +_,7 @@
+ 									if (num15 == 0 && l > 5)
+ 										num47 = 4;
+ 
+-									DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16 + num45, num14 * 16 + num11 + num47) - Main.screenPosition, new Rectangle(16 + num21 + num46, 0, 2, 16 - num11), color5, SpriteEffects.FlipHorizontally);
++									DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16 + num45, num14 * 16 + num11 + num47) - Main.screenPosition, new Rectangle(16 + num21 + num46, 0, 2, 16 - num11), color5, SpriteEffects.FlipHorizontally, liquidType);
+ 								}
+ 							}
+ 							else {
+@@ -659,13 +_,13 @@
+ 								else if (TileID.Sets.BlocksWaterDrawingBehindSelf[Main.tile[num13, num14 + 1].type])
+ 									height = 8;
+ 
+-								DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16 + num11) - Main.screenPosition, new Rectangle(16 + num21, 0, 16, height), color5, SpriteEffects.None);
++								DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16 + num11) - Main.screenPosition, new Rectangle(16 + num21, 0, 16, height), color5, SpriteEffects.None, liquidType);
+ 							}
+ 							break;
+ 						case 0:
+ 							if (num33 == 0) {
+ 								if (Main.tile[num13, num14].liquid <= 0 || Main.tile[num13, num14].halfBrick())
+-									DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16 + num11) - Main.screenPosition, new Rectangle(16 + num21, 0, 16, 16), color5, SpriteEffects.None);
++									DrawWaterfall(num12, num13, num14, alpha, new Vector2(num13 * 16, num14 * 16 + num11) - Main.screenPosition, new Rectangle(16 + num21, 0, 16, 16), color5, SpriteEffects.None, liquidType);
+ 
+ 								k = 1000;
+ 							}
+@@ -700,10 +_,12 @@
+ 		Main.tileSolid[546] = true;
+ 	}
+ 
+-	private void DrawWaterfall(int waterfallType, int x, int y, float opacity, Vector2 position, Rectangle sourceRect, Color color, SpriteEffects effects)
++	// private void DrawWaterfall(int waterfallType, int x, int y, float opacity, Vector2 position, Rectangle sourceRect, Color color, SpriteEffects effects)
++	private void DrawWaterfall(int waterfallType, int x, int y, float opacity, Vector2 position, Rectangle sourceRect, Color color, SpriteEffects effects, int liquidType = 0)
+ 	{
+-		Texture2D value = waterfallTexture[waterfallType].Value;
+-		if (waterfallType == 25) {
++		// Texture2D value = LiquidLoader._LiquidTextures[liquidType][waterfallType].WaterfallTexture.Value;
++		Texture2D value = (liquidType == 0) ? waterfallTexture[waterfallType].Value : LiquidLoader.liquids[liquidType].LiquidStyle[waterfallType].WaterfallAsset.Value;
++		if (liquidType == 3) {
+ 			Lighting.GetCornerColors(x, y, out var vertices);
+ 			LiquidRenderer.SetShimmerVertexColors(ref vertices, opacity, x, y);
+ 			Main.tileBatch.Draw(value, position + new Vector2(0f, 0f), sourceRect, vertices, default(Vector2), 1f, effects);
 @@ -746,8 +_,12 @@
  				num = 255f * alpha;
  				num2 = 255f * alpha;

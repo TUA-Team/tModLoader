@@ -43,6 +43,8 @@ public partial class Main
 	public static bool showServerConsole;
 	public static bool Support8K = true; // provides an option to disable 8k (but leave 4k)
 	public static double desiredWorldEventsUpdateRate = 1; // dictates the speed at which world events (falling stars, fairy spawns, sandstorms, etc.) can change/happen
+	public static int[] LiquidStyle = new int[LiquidID.Count]; // Replace Main.waterStyle internally, allowing to use it for more than just vanilla liquid
+	public static float[][] LiquidAlpha = new float[4][] { new float[15], new float[1], new float[1], new float[1] };
 	/// <summary>
 	/// Representation that dictates the actual amount of "world event updates" that happen in a given GAME tick. This number increases/decreases in direct tandem with
 	/// <seealso cref="desiredWorldEventsUpdateRate"/>.

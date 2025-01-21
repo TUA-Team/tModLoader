@@ -18,5 +18,9 @@
   <ItemGroup>
     <None Remove="Content\Items\ExampleBucket.png" />
     <None Remove="Content\Liquids\ExampleLiquid.png" />
+    <None Remove="Content\Liquids\ExampleLiquidStyle.png" />
+    <None Remove="Content\Liquids\ExampleLiquidStyle_Block.png" />
+    <None Remove="Content\Liquids\ExampleLiquidStyle_Slope.png" />
+    <None Remove="Content\Liquids\ExampleLiquidStyle_Waterfall.png" />
   </ItemGroup>
 </Project>

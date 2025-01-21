@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Terraria.Graphics.Capture;
 using Terraria.Graphics.Effects;
 using Terraria.Graphics.Shaders;
@@ -17,6 +18,13 @@ public abstract partial class ModSceneEffect : ModType
 	/// The ModWaterStyle that will apply to water.
 	/// </summary>
 	public virtual ModWaterStyle WaterStyle => null;
+
+	/// <summary>
+	/// A dictionnary of ModLiquidStyle that will apply to various liquid in the biome
+	/// Key -> The id of the liquid (0-3 being vanilla liquids, use ModContent.LiquidStyle<ModLiquid>() for modded liquid ID)
+	/// Value -> The style you wanna apply for that liquid (DO NOTE THAT YOU CAN REUSE THE SAME STYLE FOR MULTIPLE LIQUID)
+	/// </summary>
+	// public virtual Dictionary<int, ModLiquidStyle> LiquidStyles => new Dictionary<int, ModLiquidStyle>();
 
 	/// <summary>
 	/// The ModSurfaceBackgroundStyle that will draw its background when the player is on the surface.

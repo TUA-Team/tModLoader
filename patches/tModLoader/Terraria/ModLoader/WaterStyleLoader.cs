@@ -30,7 +30,7 @@ public class WaterStylesLoader : SceneEffectLoader<ModWaterStyle>
 		Array.Resize(ref LiquidRenderer.Instance._liquidTextures, TotalCount);
 
 		//Etc
-		Array.Resize(ref Main.liquidAlpha, TotalCount);
+		Array.Resize(ref Main.LiquidAlpha[0], TotalCount);
 	}
 
 	public override void ChooseStyle(out int style, out SceneEffectPriority priority)

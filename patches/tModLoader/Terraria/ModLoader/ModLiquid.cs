@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using ReLogic.Content;
 using Terraria.GameContent;
 using Terraria.GameContent.Liquid;
 using Terraria.ID;
@@ -11,6 +12,30 @@ namespace Terraria.ModLoader;
 
 public abstract class ModLiquid : ModBlockType
 {
+	internal class DefaultLiquidStyle : ModLiquidStyle
+	{
+		public override bool IsLiquidActive() => true;
+
+		internal DefaultLiquidStyle(string defaultTextureName)
+		{
+			DefaultTextureName = defaultTextureName;
+		}
+
+	}
+
+
+	internal static VanillaWater Water = new VanillaWater();
+	internal static VanillaLava Lava = new VanillaLava();
+	internal static VanillaHoney Honey = new VanillaHoney();
+	internal static VanillaShimmer Shimmer = new VanillaShimmer();
+
+
+	internal List<LiquidLoader.LiquidTextures> Textures = new List<LiquidLoader.LiquidTextures>();
+	internal int LiquidStyleCount = 0;
+	internal ModLiquidStyle[] LiquidStyle = new ModLiquidStyle[0];
+
+	internal virtual bool UseDefaultWaterStyle => true;
+
 	public int WaterfallLength {
 		get => LiquidRenderer.WATERFALL_LENGTH[Type];
 		set {
@@ -44,7 +69,19 @@ public abstract class ModLiquid : ModBlockType
 		set => LiquidLoader.liquidProperties[Type].FallDelay = value;
 	}
 
+	public bool HellEvaporation {
+		get => LiquidLoader.liquidProperties[Type].HellEvaporation;
+		set => LiquidLoader.liquidProperties[Type].HellEvaporation = value;
+	}
+
+	public string WaterfallTexture {
+		set => LiquidLoader._LiquidTextures[Type][0].WaterfallTexture = ModContent.Request<Texture2D>(value);
+	}
+
 	public override string LocalizationCategory => "Liquids";
+
+	// public abstract string LiquidFallTexture { get; }
+	// public abstract string LiquidCornerTexture { get; }
 
 	protected sealed override void Register()
 	{
@@ -52,11 +89,34 @@ public abstract class ModLiquid : ModBlockType
 
 		ModTypeLookup<ModLiquid>.Register(this);
 		LiquidLoader.liquids.Add(this);
+
+		ModLiquidStyle liquidStyle = new DefaultLiquidStyle(this.Texture);
+
+		Array.Resize(ref Main.LiquidAlpha, Type+1);
+		Main.LiquidAlpha[Type] = new float[1];
+
+		if (UseDefaultWaterStyle)
+			RegisterLiquidStyle(liquidStyle, init: false);
+	}
+
+	internal int RegisterLiquidStyle(ModLiquidStyle liquidStyle, bool init = false)
+	{
+		Array.Resize(ref LiquidStyle, ++LiquidStyleCount);
+		if (!init)
+			Array.Resize(ref Main.LiquidAlpha[liquidStyle.Liquid], LiquidStyleCount);
+		LiquidStyle[LiquidStyleCount - 1] = liquidStyle;
+		return LiquidStyleCount - 1;
 	}
 
 	public sealed override void SetupContent()
 	{
 		TextureAssets.Liquid[15 + Type - LiquidID.Count] = ModContent.Request<Texture2D>(Texture);
+		LiquidRenderer.Instance._moddedLiquidTextures[Type - LiquidID.Count] = ModContent.Request<Texture2D>(Texture);
+		LiquidLoader._LiquidTextures[Type] = new List<LiquidLoader.LiquidTextures>();
+		LiquidLoader._LiquidTextures[Type].Add(new LiquidLoader.LiquidTextures());
+		LiquidLoader._LiquidTextures[Type][0].MainTexture = ModContent.Request<Texture2D>(Texture);
+		// Setting default waterfall texture to water by default
+		WaterfallTexture = Texture + "_waterfall";
 
 		SetStaticDefaults();
 
@@ -67,6 +127,11 @@ public abstract class ModLiquid : ModBlockType
 	{
 		WaterfallLength = 10;
 		DefaultOpacity = 0.6f;
+	}
+
+	public virtual void OnEntityCollision(Entity entity, CollisionType collisionType)
+	{
+
 	}
 
 	/// <summary>
@@ -101,5 +166,21 @@ public abstract class ModLiquid : ModBlockType
 			}
 			MapLoader.liquidEntries[Type].Add(entry);
 		}
+	}
+
+
+	public virtual void PreUpdate(int x, int y)
+	{
+		
+	}
+
+	public virtual bool Update(Liquid liquid, int x, int y, Tile left, Tile right, Tile up, Tile down)
+	{
+		return true;
+	}
+
+	public virtual void Merge(int otherLiquid, bool[] liquidNearby, ref int liquidMergeTileType, ref int liquidMergeType)
+	{
+
 	}
 }
